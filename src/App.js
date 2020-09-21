@@ -1,63 +1,63 @@
-import React, { useState, useRef } from "react";
-import { Button, Collapse, InputAdornment, TextField } from "@material-ui/core";
-import code from "./code";
-import "./styles.css";
+import React, { useState, useRef } from 'react';
+import {
+  Collapse,
+  Form,
+  Switch,
+  Button,
+  Input
+} from 'antd';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { prism } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import CopyToClipboard from 'react-copy-to-clipboard';
 
-const DEFAULT_DOMAIN = "example.org";
-const DEFAULT_NOTION_URL =
-  "https://www.notion.so/Fruition-771ef38657244c27b9389734a9cbff44";
+import { MinusCircleOutlined, PlusOutlined, CheckCircleOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons';
 
-function validDomain(domain) {
-  return domain.match(
-    /^((https:\/\/)|(http:\/\/))?[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9](?:\.[a-zA-Z]{2,})+(\/)?$/
-  );
-}
 
-function validNotionUrl(url) {
-  if (!url) return true;
-  try {
-    const link = new URL(url);
-    return (
-      link.hostname.endsWith("notion.so") &&
-      link.pathname.slice(-32).match(/[0-9a-f]{32}/)
-    );
-  } catch (e) {
-    return false;
-  }
-}
+import CodeGenerator from './utils/CodeGenerator'
+import './App.less';
+
+const { Panel } = Collapse;
 
 export default function App() {
+
+  // Hooks
   const [slugs, setSlugs] = useState([]);
-  const [myDomain, setMyDomain] = useState("");
-  const [notionUrl, setNotionUrl] = useState("");
+  const [domain, setDomain] = useState("");
+  const [domainURL, setDomainURL] = useState("");
   const [pageTitle, setPageTitle] = useState("");
   const [pageDescription, setPageDescription] = useState("");
-  const [googleFont, setGoogleFont] = useState("");
-  const [customScript, setCustomScript] = useState("");
-  const [optional, setOptional] = useState(false);
+  const [customFonts, setCustomFonts] = useState("");
+  const [customScripts, setCustomScripts] = useState("");
+  const [isDarkMode, setDarkMode] = useState(false);
+  // const [optional, setOptional] = useState(false);
   const [copied, setCopied] = useState(false);
-  const handleMyDomain = e => {
-    setMyDomain(e.target.value);
+
+  // Handles  
+  const handleDomain = e => {
+    setDomain(e.target.value);
     setCopied(false);
   };
-  const handleNotionUrl = e => {
-    setNotionUrl(e.target.value);
+
+  const handleDomainURL = e => {
+    setDomainURL(e.target.value);
     setCopied(false);
   };
+
   const handlePageTitle = e => {
     setPageTitle(e.target.value);
     setCopied(false);
   };
+
   const handlePageDescription = e => {
     setPageDescription(e.target.value);
     setCopied(false);
   };
-  const handleGoogleFont = e => {
-    setGoogleFont(e.target.value);
+  const handleCustomFonts = e => {
+    setCustomFonts(e.target.value);
     setCopied(false);
   };
-  const handleCustomScript = e => {
-    setCustomScript(e.target.value);
+  const handleCustomScripts = e => {
+    setCustomScripts(e.target.value);
     setCopied(false);
   };
   const addSlug = () => {
@@ -68,7 +68,7 @@ export default function App() {
     setSlugs([...slugs.slice(0, index), ...slugs.slice(index + 1)]);
     setCopied(false);
   };
-  const handleCustomURL = (value, index) => {
+  const handleSlug = (value, index) => {
     setSlugs([
       ...slugs.slice(0, index),
       [value, slugs[index][1]],
@@ -76,7 +76,7 @@ export default function App() {
     ]);
     setCopied(false);
   };
-  const handleNotionPageURL = (value, index) => {
+  const handleSlugURL = (value, index) => {
     setSlugs([
       ...slugs.slice(0, index),
       [slugs[index][0], value],
@@ -84,181 +84,160 @@ export default function App() {
     ]);
     setCopied(false);
   };
-  const handleOptional = () => {
-    setOptional(!optional);
+  const handleDarkMode = isDarkMode => {
+    setDarkMode(isDarkMode);
   };
-  const domain = myDomain || DEFAULT_DOMAIN;
-  const url = notionUrl || DEFAULT_NOTION_URL;
-  const myDomainHelperText = !validDomain(domain)
-    ? "Please enter a valid domain"
-    : undefined;
-  const notionUrlHelperText = !validNotionUrl(notionUrl)
-    ? "Please enter a valid Notion Page URL"
-    : undefined;
-  const noError = !myDomainHelperText && !notionUrlHelperText;
-  const script = noError
-    ? code({
-        myDomain: domain,
-        notionUrl: url,
-        slugs,
-        pageTitle,
-        pageDescription,
-        googleFont,
-        customScript
-      })
-    : undefined;
-  const textarea = useRef("");
+  // const handleOptional = () => {
+  //   setOptional(!optional);
+  // };
+
+  const code = CodeGenerator({
+    domain,
+    domainURL,
+    slugs,
+    pageTitle,
+    pageDescription,
+    customFonts,
+    customScripts
+  });
+  const codes = useRef("");
   const copy = () => {
-    if (!noError) return;
-    textarea.current.select();
+    // codes.current.select();
+    console.log(codes.current);
     document.execCommand("copy");
     setCopied(true);
   };
+
+
+
+
+  const onFormFinish = values => {
+    console.log('Received values of form:', values);
+  };
+
   return (
-    <section style={{ maxWidth: 666 }}>
-      <TextField
-        fullWidth
-        helperText={myDomainHelperText}
-        label="Your Domain (e.g. example.org)"
-        onChange={handleMyDomain}
-        margin="normal"
-        placeholder={DEFAULT_DOMAIN}
-        value={myDomain}
-        variant="outlined"
-      />
-      <TextField
-        fullWidth
-        helperText={notionUrlHelperText}
-        label={`Notion URL for ${domain}`}
-        margin="normal"
-        onChange={handleNotionUrl}
-        placeholder={DEFAULT_NOTION_URL}
-        value={notionUrl}
-        variant="outlined"
-      />
-      {slugs.map(([customUrl, notionPageUrl], index) => {
-        return (
-          <section>
-            <TextField
-              fullWidth
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">{`${domain}/`}</InputAdornment>
-                )
-              }}
-              key="key"
-              label="Pretty Link"
-              margin="normal"
-              placeholder="about"
-              onChange={e => handleCustomURL(e.target.value, index)}
-              value={customUrl}
-              variant="outlined"
-            />
-            <TextField
-              fullWidth
-              label={`Notion URL for ${domain}/${customUrl || "about"}`}
-              key="value"
-              margin="normal"
-              placeholder={DEFAULT_NOTION_URL}
-              onChange={e => handleNotionPageURL(e.target.value, index)}
-              value={notionPageUrl}
-              variant="outlined"
-            />
-            <Button
-              onClick={() => deleteSlug(index)}
-              variant="outlined"
-              color="secondary"
-              size="small"
-            >
-              Delete this pretty link
-            </Button>
-          </section>
-        );
-      })}
-      <section>
-        <Button
-          onClick={addSlug}
-          size="small"
-          variant="outlined"
-          color="primary"
-        >
-          Add a pretty link
-        </Button>
-      </section>
-      <section>
-        <Button
-          onClick={handleOptional}
-          size="small"
-          variant="outlined"
-          color="primary"
-        >
-          Toggle Style And Script Settings
-        </Button>
-      </section>
-      <Collapse in={optional} timeout="auto" unmountOnExit>
-        <TextField
-          fullWidth
-          label="Page Title"
-          margin="normal"
-          onChange={handlePageTitle}
-          value={pageTitle}
-          variant="outlined"
-        />
-        <TextField
-          fullWidth
-          label="Page Description"
-          margin="normal"
-          onChange={handlePageDescription}
-          value={pageDescription}
-          variant="outlined"
-        />
-        <TextField
-          fullWidth
-          label="Custom Google Font"
-          margin="normal"
-          placeholder="Open Sans"
-          onChange={handleGoogleFont}
-          value={googleFont}
-          variant="outlined"
-        />
-        <TextField
-          fullWidth
-          label="Paste Your Custom Script"
-          margin="normal"
-          multiline
-          placeholder="e.g. Google Analytics"
-          onChange={handleCustomScript}
-          rows={2}
-          value={customScript}
-          variant="outlined"
-        />
-      </Collapse>
-      <section>
-        <Button
-          disabled={!noError}
-          variant="contained"
-          color="primary"
-          disableElevation
-          onClick={copy}
-        >
-          {copied ? "Copied!" : "Copy the code"}
-        </Button>
-      </section>
-      {noError ? (
-        <>
-          <TextField
-            fullWidth
-            margin="normal"
-            rowsMax={5}
-            multiline
-            inputRef={textarea}
-            value={script}
-            variant="outlined"
+    <div className="App">
+      <Form
+        name="code-generate-form"
+        layout="vertical"
+        onFinish={onFormFinish}
+      >
+
+        <Form.Item label="Domain">
+          <Input
+            placeholder="example.com"
+            onChange={handleDomain}
           />
-        </>
-      ) : (
-        ""
-      )}
-    </section>
-  );
+        </Form.Item>
+
+        <Form.Item label="Notion URL for Domain">
+          <Input
+            placeholder="https://www.notion.so/Notion-Rebuild-adeb571cc8004db19f2a425f19eab678"
+            onChange={handleDomainURL}
+          />
+        </Form.Item>
+
+        
+
+        <Form.Item label="Pretty Links">
+          <Form.List>
+            {(fields, { add, remove }) => {
+              return (
+                <>
+                  {slugs.map(([slug, slugURL], index) => {
+                    return (
+                      <>
+                        <Form.Item
+                          // {...slug}
+                          // name={[slug.name, 'slug']}
+                          // fieldKey={[slug.fieldKey, 'slug']}
+                          rules={[{ required: true, message: 'Missing Slug' }]}
+                        >
+                          <Input.Group compact>
+                            <Input
+                              prefix="/"
+                              placeholder="slug"
+                              onChange={e => handleSlug(e.target.value, index)}
+                              style={{ width: '30%' }}
+                            />
+                            <Input
+                              placeholder="URL"
+                              onChange={e => handleSlugURL(e.target.value, index)}
+                              style={{ width: 'calc(70% - 32px)' }}
+                            />
+                            <Button
+                              type="text"
+                              icon={<MinusCircleOutlined />}
+                              style={{ width: '32px' }}
+                              onClick={() => { deleteSlug(index) }} 
+                              danger
+                            />
+                          </Input.Group>
+                        </Form.Item>
+                      </>
+                    );
+                  })}
+                </>
+              );
+            }}
+            
+          </Form.List>
+
+          <Button type="dashed" onClick={addSlug} block>
+            <PlusOutlined /> Add Pretty Link
+          </Button>
+        </Form.Item>
+        
+        {/* Page */}
+        <Form.Item label="Page">
+          <Input.Group>
+            <Input
+              placeholder="Title"
+              onChange={handlePageTitle} />
+            <Input.TextArea
+              placeholder="Description"
+              onChange={handlePageDescription} />
+          </Input.Group>
+        </Form.Item>
+
+        {/* Custom Fonts */}
+        <Form.Item label="Custom Fonts">
+          <Input placeholder="Rubik, Noto Sans SC..." onChange={handleCustomFonts} />
+        </Form.Item>
+        
+        {/* Custom Scripts */}
+        <Form.Item label="Custom Scripts">
+          <Input.TextArea placeholder="Google Analytics..." onChange={handleCustomScripts} />
+        </Form.Item>
+        
+        {/* Dark Mode */}
+        <Form.Item label="Use Dark Mode">
+          <Switch
+            checkedChildren={<CheckOutlined />}
+            unCheckedChildren={<CloseOutlined />}
+            onChange={handleDarkMode}
+          />
+        </Form.Item>
+
+        {/* Copy */}
+        <Form.Item>
+          <CopyToClipboard
+            text={code}
+            onCopy={() => setCopied(true)}>
+            <Button
+              type="primary"
+              icon={copied ? <CheckCircleOutlined /> : null}
+            >{ copied ? 'Copied!' : 'COPY THE CODE' }</Button>
+          </CopyToClipboard>
+          <SyntaxHighlighter
+            language="javascript"
+            style={prism}
+            customStyle={{ maxHeight: '100vh', border: '1px solid #d9d9d9', borderRadius: '3px' }}
+          >
+            { code }
+          </SyntaxHighlighter>
+        </Form.Item>
+      </Form>
+    </div>
+  )
 }
